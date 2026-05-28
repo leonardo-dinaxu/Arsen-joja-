@@ -1,0 +1,10 @@
+// app/api/matches/route.ts
+import { prisma } from "@/lib/prisma";
+
+export async function GET() {
+  const matches = await prisma.match.findMany({
+    where: { status: "OPEN" },
+    orderBy: { date: "asc" },
+  });
+  return Response.json(matches);
+}

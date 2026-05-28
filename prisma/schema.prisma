@@ -1,0 +1,300 @@
+// =============================================================
+// SFL — Street Football League
+// prisma/schema.prisma
+// Database: PostgreSQL
+// ORM: Prisma
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================
+// ENUMS
+// =============================================================
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Position {
+  GK   // Вратарь
+  LB   // Левый защитник
+  RB   // Правый защитник
+  CB   // Центральный защитник
+  CDM  // Опорный полузащитник
+  CM   // Центральный полузащитник
+  CAM  // Атакующий полузащитник
+  LW   // Левый вингер
+  RW   // Правый вингер
+  ST   // Нападающий
+}
+
+enum Foot {
+  LEFT
+  RIGHT
+  BOTH
+}
+
+enum ExperienceLevel {
+  BEGINNER      // До 1 года
+  AMATEUR       // 1–3 года
+  INTERMEDIATE  // 3–7 лет
+  EXPERIENCED   // 7–12 лет
+  PROFESSIONAL  // 12+ лет
+}
+
+enum MatchStatus {
+  DRAFT       // Черновик, не опубликован
+  OPEN        // Идёт набор
+  HOT         // Почти заполнено (≥ 80%)
+  FULL        // Мест нет
+  IN_PROGRESS // Матч идёт
+  COMPLETED   // Завершён
+  CANCELLED   // Отменён
+}
+
+enum PaymentStatus {
+  PENDING   // Ожидает оплаты
+  PAID      // Оплачено
+  FAILED    // Ошибка оплаты
+  REFUNDED  // Возврат
+  MANUAL    // Отмечено вручную администратором
+}
+
+enum RegistrationStatus {
+  PENDING   // Записался, не оплатил
+  CONFIRMED // Оплатил — место подтверждено
+  CANCELLED // Отменил запись
+  KICKED    // Удалён администратором
+}
+
+// =============================================================
+// USER — аккаунт (аутентификация + роль)
+// =============================================================
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  phone          String?  @unique
+  passwordHash   String
+  role           Role     @default(USER)
+  isActive       Boolean  @default(true)
+  emailVerified  Boolean  @default(false)
+  lastLoginAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  profile        PlayerProfile?
+  registrations  MatchRegistration[]
+  payments       Payment[]
+  ratingsGiven   Rating[]  @relation("RaterRatings")
+  ratingsReceived Rating[] @relation("RatedRatings")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// =============================================================
+// PLAYER PROFILE — расширенный профиль игрока
+// =============================================================
+
+model PlayerProfile {
+  id              String          @id @default(cuid())
+  userId          String          @unique
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Личные данные
+  firstName       String
+  lastName        String
+  age             Int
+  heightCm        Int
+  weightKg        Int
+
+  // Игровые данные
+  mainPosition    Position
+  altPosition     Position?
+  dominantFoot    Foot
+  experienceLevel ExperienceLevel @default(AMATEUR)
+  experienceYears Int             @default(0)
+
+  // Медиа
+  photoUrl        String?
+
+  // Рейтинг и статистика (пересчитывается после каждого матча)
+  rating          Float           @default(0.0)
+  matchesPlayed   Int             @default(0)
+  goalsScored     Int             @default(0)
+  assistsMade     Int             @default(0)
+  totalRatings    Int             @default(0)   // Количество полученных оценок
+  ratingSum       Float           @default(0.0) // Сумма для расчёта среднего
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([mainPosition])
+  @@index([rating])
+  @@index([age])
+  @@map("player_profiles")
+}
+
+// =============================================================
+// MATCH — матч
+// =============================================================
+
+model Match {
+  id             String      @id @default(cuid())
+
+  // Основная информация
+  title          String
+  description    String?
+  date           DateTime
+  durationMin    Int         @default(120) // Продолжительность в минутах
+
+  // Место
+  address        String
+  venueName      String?
+  latitude       Float?
+  longitude      Float?
+
+  // Настройки
+  maxPlayers     Int         @default(14)
+  priceSom       Int         // Стоимость участия в сумах
+  status         MatchStatus @default(DRAFT)
+
+  // Результат (заполняется после матча)
+  teamAScore     Int?
+  teamBScore     Int?
+  notes          String?     // Заметки администратора
+
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  registrations  MatchRegistration[]
+  ratings        Rating[]
+  videos         Video[]
+
+  @@index([date])
+  @@index([status])
+  @@map("matches")
+}
+
+// =============================================================
+// MATCH REGISTRATION — запись игрока на матч
+// =============================================================
+
+model MatchRegistration {
+  id        String             @id @default(cuid())
+  userId    String
+  matchId   String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     Match              @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  status    RegistrationStatus @default(PENDING)
+  team      String?            // "A" или "B" — назначает администратор
+
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  // Relations
+  payment   Payment?
+
+  @@unique([userId, matchId])
+  @@index([matchId])
+  @@index([userId])
+  @@map("match_registrations")
+}
+
+// =============================================================
+// PAYMENT — платёж за участие
+// =============================================================
+
+model Payment {
+  id               String        @id @default(cuid())
+  registrationId   String        @unique
+  registration     MatchRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Сумма
+  amountSom        Int           // Сумма в сумах
+
+  // Статус и провайдер
+  status           PaymentStatus @default(PENDING)
+  provider         String?       // "payme" | "click" | "manual"
+  providerOrderId  String?       // ID транзакции со стороны провайдера
+  providerRef      String?       // Дополнительная ссылка/чек
+
+  // Возврат
+  refundedAt       DateTime?
+  refundReason     String?
+
+  // Ручная отметка администратором
+  markedByAdminId  String?
+  markedAt         DateTime?
+
+  paidAt           DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([providerOrderId])
+  @@map("payments")
+}
+
+// =============================================================
+// RATING — оценка игрока после матча
+// =============================================================
+
+model Rating {
+  id        String   @id @default(cuid())
+  matchId   String
+  raterId   String   // Кто оценивает
+  ratedId   String   // Кого оценивают
+  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  rater     User     @relation("RaterRatings",  fields: [raterId], references: [id], onDelete: Cascade)
+  rated     User     @relation("RatedRatings",  fields: [ratedId], references: [id], onDelete: Cascade)
+
+  score     Float    // 1.0 — 10.0
+  comment   String?  // Необязательный отзыв
+
+  createdAt DateTime @default(now())
+
+  // Один игрок оценивает другого в рамках одного матча только один раз
+  @@unique([matchId, raterId, ratedId])
+  @@index([ratedId])
+  @@index([matchId])
+  @@map("ratings")
+}
+
+// =============================================================
+// VIDEO — видеозапись матча
+// =============================================================
+
+model Video {
+  id          String   @id @default(cuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  title       String?
+  url         String           // URL видео (YouTube, Vimeo, прямая ссылка)
+  thumbnailUrl String?
+  durationSec Int?             // Длительность в секундах
+  isPublished Boolean  @default(false)
+
+  uploadedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([matchId])
+  @@map("videos")
+}

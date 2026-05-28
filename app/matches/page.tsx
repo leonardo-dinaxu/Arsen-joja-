@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Матчи — SFL" };
 
 // Автообновление страницы каждые 60 секунд
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, string> = {
   DRAFT:       "Черновик",
@@ -283,7 +283,12 @@ function MatchCard({ match, taken, free, fillPct, registered, isLoggedIn, past }
       {!past && !isCompleted && (
         <div className="flex items-center justify-between">
           {registered ? (
-            <span className="text-green-400 text-sm font-medium">✓ Вы записаны</span>
+            <Link
+              href={`/matches/${match.id}`}
+              className="text-green-400 text-sm font-medium hover:text-green-300 transition-colors"
+            >
+              ✓ Вы записаны →
+            </Link>
           ) : isLoggedIn ? (
             <Link
               href={`/matches/${match.id}`}

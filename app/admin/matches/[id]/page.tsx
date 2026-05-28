@@ -78,9 +78,17 @@ export default async function AdminMatchPage({
         <Link href="/admin" className="text-lg font-medium tracking-[0.2em] uppercase">
           ⬡ SFL Admin
         </Link>
-        <Link href="/admin" className="text-zinc-500 text-sm hover:text-white transition-colors">
-          ← Назад
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href={`/admin/matches/${id}/edit`}
+            className="bg-zinc-800 text-zinc-300 text-sm px-4 py-1.5 rounded-lg hover:bg-zinc-700 transition-colors"
+          >
+            Редактировать
+          </Link>
+          <Link href="/admin" className="text-zinc-500 text-sm hover:text-white transition-colors">
+            ← Назад
+          </Link>
+        </div>
       </nav>
 
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">

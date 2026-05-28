@@ -16,8 +16,8 @@ import { updateProfileAction, type ProfileState } from "@/app/actions/updateProf
 const schema = z.object({
   firstName:       z.string().min(2, "Минимум 2 символа"),
   lastName:        z.string().min(2, "Минимум 2 символа"),
-  age:             z.string().refine((v) => +v >= 12 && +v <= 60, "От 12 до 60 лет"),
-  heightCm:        z.string().refine((v) => +v >= 120 && +v <= 220, "От 120 до 220 см"),
+  age:             z.string().refine((v) => +v >= 14 && +v <= 60, "От 14 до 60 лет"),
+  heightCm:        z.string().refine((v) => +v >= 140 && +v <= 220, "От 140 до 220 см"),
   weightKg:        z.string().refine((v) => +v >= 40  && +v <= 150, "От 40 до 150 кг"),
   mainPosition:    z.string().min(1, "Выберите позицию"),
   altPosition:     z.string().optional(),

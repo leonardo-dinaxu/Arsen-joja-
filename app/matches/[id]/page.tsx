@@ -12,7 +12,7 @@ import { logoutAction }  from "@/app/actions/logout";
 import JoinButton        from "./_components/JoinButton";
 import type { Metadata } from "next";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
 
 const STATUS_LABEL: Record<string, string> = {
   OPEN: "Идёт набор", HOT: "Почти заполнено", FULL: "Мест нет",
@@ -84,6 +84,7 @@ export default async function MatchPage({
               },
             },
           },
+          payment: { select: { status: true } },
         },
       },
     },
@@ -96,11 +97,13 @@ export default async function MatchPage({
   const fillPct = Math.min(100, Math.round((taken / match.maxPlayers) * 100));
 
   // Проверяем записан ли текущий пользователь
-  const userReg = session?.user
-    ? match.registrations.find((r) => r.user.id === session.user.id)
-    : null;
+  const userRegs = session?.user
+    ? match.registrations.filter((r) => String(r.user.id) === String(session.user.id))
+    : [];
+  const userReg = userRegs.find((r) => r.status === "CONFIRMED") ?? userRegs[0] ?? null;
 
-  const canJoin = ["OPEN", "HOT"].includes(match.status) && free > 0 && !userReg;
+  const isPaid   = userReg?.status === "CONFIRMED" || ["PAID","MANUAL"].includes(userReg?.payment?.status ?? "");
+  const canJoin  = ["OPEN", "HOT"].includes(match.status) && free > 0 && !userReg;
   const canLeave = !!userReg && !["COMPLETED","CANCELLED","IN_PROGRESS"].includes(match.status);
 
   return (
@@ -207,6 +210,7 @@ export default async function MatchPage({
             canJoin={canJoin}
             canLeave={canLeave}
             isRegistered={!!userReg}
+            isPaid={isPaid}
             matchStatus={match.status}
           />
         )}

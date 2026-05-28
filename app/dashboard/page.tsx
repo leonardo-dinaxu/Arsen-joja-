@@ -102,7 +102,7 @@ export default async function DashboardPage() {
         {/* Аккаунт */}
         <Section title="Аккаунт">
           <Row label="Email" value={session.user.email ?? "—"} />
-          <Row label="Роль"  value={session.user.role === "ADMIN" ? "Администратор" : "Игрок"} />
+          <Row label="Роль"  value={String(session.user.role) === "ADMIN" ? "Администратор" : "Игрок"} />
         </Section>
 
         {/* Профиль */}

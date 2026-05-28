@@ -1,11 +1,6 @@
 "use client";
 
-// =============================================================
-// SFL — Street Football League
-// app/profile/_components/ProfileEditForm.tsx
-// =============================================================
-
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 import { updateProfileAction, type ProfileState } from "@/app/actions/updateProfile";
 
 const initialState: ProfileState = { success: false };
@@ -32,18 +27,17 @@ const EXPERIENCE_LEVELS = [
 ];
 
 interface DefaultValues {
-  firstName:       string;
-  lastName:        string;
-  age:             string;
-  heightCm:        string;
-  weightKg:        string;
-  mainPosition:    string;
-  altPosition:     string;
-  dominantFoot:    string;
-  experienceLevel: string;
-  experienceYears: string;
-  phone:           string;
+  firstName: string; lastName: string; age: string;
+  heightCm: string; weightKg: string; mainPosition: string;
+  altPosition: string; dominantFoot: string;
+  experienceLevel: string; experienceYears: string; phone: string;
 }
+
+const cls = (error?: string) => [
+  "w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-white text-sm",
+  "placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors",
+  error ? "border-red-700" : "border-zinc-700",
+].join(" ");
 
 export default function ProfileEditForm({ defaultValues }: { defaultValues: DefaultValues }) {
   const [state, formAction, isPending] = useActionState(updateProfileAction, initialState);
@@ -51,7 +45,6 @@ export default function ProfileEditForm({ defaultValues }: { defaultValues: Defa
   return (
     <form action={formAction} className="space-y-4">
 
-      {/* Сообщения */}
       {state.message && (
         <div className={[
           "text-sm rounded-lg px-4 py-3 border",
@@ -63,57 +56,60 @@ export default function ProfileEditForm({ defaultValues }: { defaultValues: Defa
         </div>
       )}
 
-      {/* Имя / Фамилия */}
       <div className="grid grid-cols-2 gap-3">
-        <Field id="firstName" label="Имя"
-          error={state.fieldErrors?.firstName?.[0]}>
-          <input id="firstName" name="firstName" type="text"
-            defaultValue={defaultValues.firstName} required />
-        </Field>
-        <Field id="lastName" label="Фамилия"
-          error={state.fieldErrors?.lastName?.[0]}>
-          <input id="lastName" name="lastName" type="text"
-            defaultValue={defaultValues.lastName} required />
-        </Field>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-firstName">Имя</label>
+          <input id="pf-firstName" name="firstName" type="text"
+            defaultValue={defaultValues.firstName} required className={cls(state.fieldErrors?.firstName?.[0])} />
+          {state.fieldErrors?.firstName && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.firstName[0]}</p>}
+        </div>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-lastName">Фамилия</label>
+          <input id="pf-lastName" name="lastName" type="text"
+            defaultValue={defaultValues.lastName} required className={cls(state.fieldErrors?.lastName?.[0])} />
+          {state.fieldErrors?.lastName && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.lastName[0]}</p>}
+        </div>
       </div>
 
-      {/* Возраст / Рост / Вес */}
       <div className="grid grid-cols-3 gap-3">
-        <Field id="age" label="Возраст" error={state.fieldErrors?.age?.[0]}>
-          <input id="age" name="age" type="number"
-            defaultValue={defaultValues.age} min="14" max="60" required />
-        </Field>
-        <Field id="heightCm" label="Рост (см)" error={state.fieldErrors?.heightCm?.[0]}>
-          <input id="heightCm" name="heightCm" type="number"
-            defaultValue={defaultValues.heightCm} min="140" max="220" required />
-        </Field>
-        <Field id="weightKg" label="Вес (кг)" error={state.fieldErrors?.weightKg?.[0]}>
-          <input id="weightKg" name="weightKg" type="number"
-            defaultValue={defaultValues.weightKg} min="40" max="150" required />
-        </Field>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-age">Возраст</label>
+          <input id="pf-age" name="age" type="number"
+            defaultValue={defaultValues.age} min="14" max="60" required className={cls(state.fieldErrors?.age?.[0])} />
+          {state.fieldErrors?.age && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.age[0]}</p>}
+        </div>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-height">Рост (см)</label>
+          <input id="pf-height" name="heightCm" type="number"
+            defaultValue={defaultValues.heightCm} min="140" max="220" required className={cls(state.fieldErrors?.heightCm?.[0])} />
+        </div>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-weight">Вес (кг)</label>
+          <input id="pf-weight" name="weightKg" type="number"
+            defaultValue={defaultValues.weightKg} min="40" max="150" required className={cls(state.fieldErrors?.weightKg?.[0])} />
+        </div>
       </div>
 
-      {/* Позиция */}
       <div className="grid grid-cols-2 gap-3">
-        <SelectField id="mainPosition" label="Основная позиция"
-          error={state.fieldErrors?.mainPosition?.[0]}
-          defaultValue={defaultValues.mainPosition}>
-          {POSITIONS.map((p) => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </SelectField>
-        <SelectField id="altPosition" label="Доп. позиция"
-          labelSuffix="(необязательно)"
-          error={state.fieldErrors?.altPosition?.[0]}
-          defaultValue={defaultValues.altPosition}>
-          <option value="">Не указана</option>
-          {POSITIONS.map((p) => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </SelectField>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-mainPos">Основная позиция</label>
+          <select id="pf-mainPos" name="mainPosition" defaultValue={defaultValues.mainPosition}
+            className={cls() + " cursor-pointer"}>
+            {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-altPos">
+            Доп. позиция <span className="text-zinc-600">(необязательно)</span>
+          </label>
+          <select id="pf-altPos" name="altPosition" defaultValue={defaultValues.altPosition}
+            className={cls() + " cursor-pointer"}>
+            <option value="">Не указана</option>
+            {POSITIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+        </div>
       </div>
 
-      {/* Рабочая нога */}
       <div>
         <label className="block text-zinc-400 text-sm mb-2">Рабочая нога</label>
         <div className="grid grid-cols-3 gap-2">
@@ -127,37 +123,34 @@ export default function ProfileEditForm({ defaultValues }: { defaultValues: Defa
                          rounded-lg py-2.5 text-sm cursor-pointer has-[:checked]:border-white
                          has-[:checked]:bg-zinc-700 transition-colors">
               <input type="radio" name="dominantFoot" value={f.value}
-                defaultChecked={defaultValues.dominantFoot === f.value}
-                className="sr-only" />
+                defaultChecked={defaultValues.dominantFoot === f.value} className="sr-only" />
               {f.label}
             </label>
           ))}
         </div>
       </div>
 
-      {/* Уровень */}
-      <SelectField id="experienceLevel" label="Уровень игры"
-        error={state.fieldErrors?.experienceLevel?.[0]}
-        defaultValue={defaultValues.experienceLevel}>
-        {EXPERIENCE_LEVELS.map((e) => (
-          <option key={e.value} value={e.value}>{e.label}</option>
-        ))}
-      </SelectField>
+      <div>
+        <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-expLevel">Уровень игры</label>
+        <select id="pf-expLevel" name="experienceLevel" defaultValue={defaultValues.experienceLevel}
+          className={cls() + " cursor-pointer"}>
+          {EXPERIENCE_LEVELS.map((e) => <option key={e.value} value={e.value}>{e.label}</option>)}
+        </select>
+      </div>
 
-      {/* Лет опыта */}
-      <Field id="experienceYears" label="Лет опыта"
-        error={state.fieldErrors?.experienceYears?.[0]}>
-        <input id="experienceYears" name="experienceYears" type="number"
-          defaultValue={defaultValues.experienceYears} min="0" max="50" />
-      </Field>
+      <div>
+        <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-expYears">Лет опыта</label>
+        <input id="pf-expYears" name="experienceYears" type="number"
+          defaultValue={defaultValues.experienceYears} min="0" max="50" className={cls()} />
+      </div>
 
-      {/* Телефон */}
-      <Field id="phone" label="Телефон" labelSuffix="(необязательно)"
-        error={state.fieldErrors?.phone?.[0]}>
-        <input id="phone" name="phone" type="tel"
-          defaultValue={defaultValues.phone}
-          placeholder="+998 90 123 45 67" />
-      </Field>
+      <div>
+        <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="pf-phone">
+          Телефон <span className="text-zinc-600">(необязательно)</span>
+        </label>
+        <input id="pf-phone" name="phone" type="tel"
+          defaultValue={defaultValues.phone} placeholder="+998 90 123 45 67" className={cls()} />
+      </div>
 
       <button type="submit" disabled={isPending}
         className="w-full bg-white text-black font-medium rounded-lg py-2.5 text-sm
@@ -165,47 +158,5 @@ export default function ProfileEditForm({ defaultValues }: { defaultValues: Defa
         {isPending ? "Сохраняем..." : "Сохранить профиль"}
       </button>
     </form>
-  );
-}
-
-// ── Field ─────────────────────────────────────────────────────
-import React from "react";
-
-const inputCls = (error?: string) => [
-  "w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-white text-sm",
-  "placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors",
-  error ? "border-red-700" : "border-zinc-700",
-].join(" ");
-
-function Field({ id, label, labelSuffix, error, children }: {
-  id: string; label: string; labelSuffix?: string;
-  error?: string; children: React.ReactElement;
-}) {
-  return (
-    <div>
-      <label className="block text-zinc-400 text-sm mb-1.5" htmlFor={id}>
-        {label}{labelSuffix && <span className="text-zinc-600 ml-1">{labelSuffix}</span>}
-      </label>
-      {React.cloneElement(children, { className: inputCls(error) })}
-      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
-
-function SelectField({ id, label, labelSuffix, error, defaultValue, children }: {
-  id: string; label: string; labelSuffix?: string;
-  error?: string; defaultValue?: string; children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="block text-zinc-400 text-sm mb-1.5" htmlFor={id}>
-        {label}{labelSuffix && <span className="text-zinc-600 ml-1">{labelSuffix}</span>}
-      </label>
-      <select id={id} name={id} defaultValue={defaultValue}
-        className={inputCls(error) + " cursor-pointer"}>
-        {children}
-      </select>
-      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-    </div>
   );
 }

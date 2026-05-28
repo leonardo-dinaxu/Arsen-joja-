@@ -3,84 +3,56 @@
 // =============================================================
 // SFL — Street Football League
 // app/(auth)/register/page.tsx
-//
-// Страница регистрации.
-// 1. Отправляет POST /api/auth/register
-// 2. После успеха — signIn() → редирект на /profile/setup
 // =============================================================
 
-import { useState }   from "react";
-import { signIn }     from "next-auth/react";
-import { useRouter }  from "next/navigation";
-import { useForm }    from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link           from "next/link";
-import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
+import { useActionState, useEffect } from "react";
+import { signIn }        from "next-auth/react";
+import { useRouter }     from "next/navigation";
+import Link              from "next/link";
+import { registerAction, type RegisterState } from "@/app/actions/register";
+
+const initialState: RegisterState = { success: false };
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [isLoading,   setIsLoading]   = useState(false);
+  const [state, formAction, isPending] = useActionState(registerAction, initialState);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
-  });
-
-  async function onSubmit(data: RegisterInput) {
-    setIsLoading(true);
-    setServerError(null);
-
-    try {
-      // 1. Регистрируем пользователя
-      const res = await fetch("/api/auth/register", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(data),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        setServerError(json.error ?? "Ошибка регистрации");
-        return;
-      }
-
-      // 2. Автоматически входим после регистрации
-      const loginResult = await signIn("credentials", {
-        email:    data.email,
-        password: data.password,
-        redirect: false,
-      });
-
-      if (loginResult?.error) {
-        // Регистрация прошла, но вход не удался → отправляем на /login
+  useEffect(() => {
+    if (state.success) {
+      // Данные для входа берём из формы через sessionStorage
+      const email    = sessionStorage.getItem("reg_email")    ?? "";
+      const password = sessionStorage.getItem("reg_password") ?? "";
+      if (email && password) {
+        signIn("credentials", { email, password, redirect: false }).then(() => {
+          sessionStorage.removeItem("reg_email");
+          sessionStorage.removeItem("reg_password");
+          router.push("/profile/setup");
+          router.refresh();
+        });
+      } else {
         router.push("/login");
-        return;
       }
-
-      // 3. Редирект на заполнение профиля
-      router.push("/profile/setup");
-      router.refresh();
-    } catch {
-      setServerError("Произошла ошибка. Попробуйте позже.");
-    } finally {
-      setIsLoading(false);
     }
+  }, [state.success, router]);
+
+  function handleInput(e: React.FormEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    if (input.name === "email")    sessionStorage.setItem("reg_email",    input.value);
+    if (input.name === "password") sessionStorage.setItem("reg_password", input.value);
   }
+
+  const inputCls = (error?: string) => [
+    "w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-white text-sm",
+    "placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors",
+    error ? "border-red-700" : "border-zinc-700",
+  ].join(" ");
 
   return (
     <main className="min-h-screen bg-black flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
 
-        {/* Логотип */}
         <div className="text-center mb-10">
-          <span className="text-2xl font-medium tracking-[0.25em] text-white uppercase">
-            ⬡ SFL
-          </span>
+          <span className="text-2xl font-medium tracking-[0.25em] text-white uppercase">⬡ SFL</span>
           <p className="text-zinc-500 text-sm mt-2">Street Football League</p>
         </div>
 
@@ -88,165 +60,72 @@ export default function RegisterPage() {
           <h1 className="text-white text-xl font-medium mb-1">Создать аккаунт</h1>
           <p className="text-zinc-500 text-sm mb-6">Заполните данные для регистрации</p>
 
-          {serverError && (
+          {state.message && !state.fieldErrors && !state.success && (
             <div className="bg-red-950 border border-red-800 text-red-400 text-sm rounded-lg px-4 py-3 mb-6">
-              {serverError}
+              {state.message}
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-
-            {/* Имя + Фамилия */}
+          <form action={formAction} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="firstName">
-                  Имя
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  autoComplete="given-name"
-                  placeholder="Азиз"
-                  {...register("firstName")}
-                  className={`
-                    w-full bg-zinc-800 border rounded-lg px-3 py-2.5 text-white text-sm
-                    placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors
-                    ${errors.firstName ? "border-red-700" : "border-zinc-700"}
-                  `}
-                />
-                {errors.firstName && (
-                  <p className="text-red-400 text-xs mt-1">{errors.firstName.message}</p>
-                )}
+                <label className="block text-zinc-400 text-sm mb-1.5">Имя</label>
+                <input name="firstName" type="text" placeholder="Азиз" required
+                  className={inputCls(state.fieldErrors?.firstName?.[0])} />
+                {state.fieldErrors?.firstName && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.firstName[0]}</p>}
               </div>
-
               <div>
-                <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="lastName">
-                  Фамилия
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  autoComplete="family-name"
-                  placeholder="Турсунов"
-                  {...register("lastName")}
-                  className={`
-                    w-full bg-zinc-800 border rounded-lg px-3 py-2.5 text-white text-sm
-                    placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors
-                    ${errors.lastName ? "border-red-700" : "border-zinc-700"}
-                  `}
-                />
-                {errors.lastName && (
-                  <p className="text-red-400 text-xs mt-1">{errors.lastName.message}</p>
-                )}
+                <label className="block text-zinc-400 text-sm mb-1.5">Фамилия</label>
+                <input name="lastName" type="text" placeholder="Турсунов" required
+                  className={inputCls(state.fieldErrors?.lastName?.[0])} />
+                {state.fieldErrors?.lastName && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.lastName[0]}</p>}
               </div>
             </div>
 
-            {/* Email */}
             <div>
-              <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                {...register("email")}
-                className={`
-                  w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-white text-sm
-                  placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors
-                  ${errors.email ? "border-red-700" : "border-zinc-700"}
-                `}
-              />
-              {errors.email && (
-                <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
-              )}
+              <label className="block text-zinc-400 text-sm mb-1.5">Email</label>
+              <input name="email" type="email" placeholder="you@example.com"
+                autoComplete="email" required onInput={handleInput}
+                className={inputCls(state.fieldErrors?.email?.[0])} />
+              {state.fieldErrors?.email && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.email[0]}</p>}
             </div>
 
-            {/* Телефон */}
             <div>
-              <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="phone">
+              <label className="block text-zinc-400 text-sm mb-1.5">
                 Телефон <span className="text-zinc-600">(необязательно)</span>
               </label>
-              <input
-                id="phone"
-                type="tel"
-                autoComplete="tel"
-                placeholder="+998 90 123 45 67"
-                {...register("phone")}
-                className={`
-                  w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-white text-sm
-                  placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors
-                  ${errors.phone ? "border-red-700" : "border-zinc-700"}
-                `}
-              />
-              {errors.phone && (
-                <p className="text-red-400 text-xs mt-1">{errors.phone.message}</p>
-              )}
+              <input name="phone" type="tel" placeholder="+998 90 123 45 67"
+                className={inputCls(state.fieldErrors?.phone?.[0])} />
+              {state.fieldErrors?.phone && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.phone[0]}</p>}
             </div>
 
-            {/* Пароль */}
             <div>
-              <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="password">
-                Пароль
-              </label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Минимум 6 символов"
-                {...register("password")}
-                className={`
-                  w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-white text-sm
-                  placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors
-                  ${errors.password ? "border-red-700" : "border-zinc-700"}
-                `}
-              />
-              {errors.password && (
-                <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>
-              )}
+              <label className="block text-zinc-400 text-sm mb-1.5">Пароль</label>
+              <input name="password" type="password" placeholder="Минимум 6 символов"
+                autoComplete="new-password" required onInput={handleInput}
+                className={inputCls(state.fieldErrors?.password?.[0])} />
+              {state.fieldErrors?.password && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.password[0]}</p>}
             </div>
 
-            {/* Подтверждение пароля */}
             <div>
-              <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="confirmPassword">
-                Повторите пароль
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="••••••••"
-                {...register("confirmPassword")}
-                className={`
-                  w-full bg-zinc-800 border rounded-lg px-4 py-2.5 text-white text-sm
-                  placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors
-                  ${errors.confirmPassword ? "border-red-700" : "border-zinc-700"}
-                `}
-              />
-              {errors.confirmPassword && (
-                <p className="text-red-400 text-xs mt-1">{errors.confirmPassword.message}</p>
-              )}
+              <label className="block text-zinc-400 text-sm mb-1.5">Повторите пароль</label>
+              <input name="confirmPassword" type="password" placeholder="••••••••"
+                autoComplete="new-password" required
+                className={inputCls(state.fieldErrors?.confirmPassword?.[0])} />
+              {state.fieldErrors?.confirmPassword && <p className="text-red-400 text-xs mt-1">{state.fieldErrors.confirmPassword[0]}</p>}
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="
-                w-full bg-white text-black font-medium rounded-lg py-2.5 text-sm
-                transition-opacity hover:opacity-90 disabled:opacity-50 mt-2
-              "
-            >
-              {isLoading ? "Регистрируем..." : "Создать аккаунт"}
+            <button type="submit" disabled={isPending}
+              className="w-full bg-white text-black font-medium rounded-lg py-2.5 text-sm
+                         transition-opacity hover:opacity-90 disabled:opacity-50">
+              {isPending ? "Создаём аккаунт..." : "Зарегистрироваться"}
             </button>
           </form>
         </div>
 
         <p className="text-center text-zinc-600 text-sm mt-6">
           Уже есть аккаунт?{" "}
-          <Link href="/login" className="text-white hover:underline">
-            Войти
-          </Link>
+          <Link href="/login" className="text-white hover:underline">Войти</Link>
         </p>
       </div>
     </main>

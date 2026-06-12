@@ -1,48 +1,42 @@
 // =============================================================
-// SFL — Street Football League
-// lib/validations/auth.ts
-//
-// Zod-схемы для валидации форм регистрации и логина.
-// Используются и на клиенте (react-hook-form), и на сервере
-// (API routes + authorize() в Auth.js).
+// SFL — lib/validations/auth.ts
+// Zod v4 синтаксис
 // =============================================================
 
 import { z } from "zod";
 
-// ---------------------------------------------------------------
-// Логин
-// ---------------------------------------------------------------
+// ── Логин ─────────────────────────────────────────────────────
 export const loginSchema = z.object({
   email: z
-    .string({ required_error: "Введите email" })
+    .string()
+    .min(1, "Введите email")
     .email("Некорректный email")
     .max(255),
 
   password: z
-    .string({ required_error: "Введите пароль" })
+    .string()
     .min(6, "Пароль — минимум 6 символов")
     .max(128),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
-// ---------------------------------------------------------------
-// Регистрация
-// ---------------------------------------------------------------
+// ── Регистрация ───────────────────────────────────────────────
 export const registerSchema = z
   .object({
     firstName: z
-      .string({ required_error: "Введите имя" })
+      .string()
       .min(2, "Имя — минимум 2 символа")
       .max(50),
 
     lastName: z
-      .string({ required_error: "Введите фамилию" })
+      .string()
       .min(2, "Фамилия — минимум 2 символа")
       .max(50),
 
     email: z
-      .string({ required_error: "Введите email" })
+      .string()
+      .min(1, "Введите email")
       .email("Некорректный email")
       .max(255),
 
@@ -53,12 +47,13 @@ export const registerSchema = z
       .or(z.literal("")),
 
     password: z
-      .string({ required_error: "Введите пароль" })
+      .string()
       .min(6,   "Пароль — минимум 6 символов")
       .max(128, "Пароль — максимум 128 символов"),
 
     confirmPassword: z
-      .string({ required_error: "Повторите пароль" }),
+      .string()
+      .min(1, "Повторите пароль"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Пароли не совпадают",

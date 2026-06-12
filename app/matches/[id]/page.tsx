@@ -51,7 +51,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         select: {
           id: true, status: true,
           user: { select: { id: true, profile: { select: { firstName: true, lastName: true, mainPosition: true, rating: true } } } },
-          payment: { select: { status: true } },
+          payment: { select: { status: true, provider: true } },
         },
       },
     },
@@ -69,6 +69,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   const userReg = userRegs.find((r) => r.status === "CONFIRMED") ?? userRegs[0] ?? null;
 
   const isPaid   = userReg?.status === "CONFIRMED" || ["PAID","MANUAL"].includes(userReg?.payment?.status ?? "");
+  const paymentPending = !isPaid && userReg?.payment?.status === "PENDING" && userReg?.payment?.provider === "card";
   const canJoin  = ["OPEN", "HOT"].includes(match.status) && free > 0 && !userReg;
   const canLeave = !!userReg && !["COMPLETED","CANCELLED","IN_PROGRESS"].includes(match.status);
 
@@ -137,7 +138,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           </a>
         ) : (
           <JoinButton matchId={match.id} canJoin={canJoin} canLeave={canLeave}
-            isRegistered={!!userReg} isPaid={isPaid} matchStatus={match.status} />
+            isRegistered={!!userReg} isPaid={isPaid} paymentPending={paymentPending} matchStatus={match.status} />
         )}
 
         <div>

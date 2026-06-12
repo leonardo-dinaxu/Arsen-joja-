@@ -8,10 +8,10 @@ import { joinMatchAction, leaveMatchAction, type JoinMatchState } from "@/app/ac
 const initialState: JoinMatchState = { success: false };
 
 export default function JoinButton({
-  matchId, canJoin, canLeave, isRegistered, isPaid, matchStatus,
+  matchId, canJoin, canLeave, isRegistered, isPaid, paymentPending, matchStatus,
 }: {
   matchId: string; canJoin: boolean; canLeave: boolean;
-  isRegistered: boolean; isPaid: boolean; matchStatus: string;
+  isRegistered: boolean; isPaid: boolean; paymentPending?: boolean; matchStatus: string;
 }) {
   const router = useRouter();
   const [joinState,  joinAction,  joinPending]  = useActionState(joinMatchAction,  initialState);
@@ -46,6 +46,11 @@ export default function JoinButton({
                   <p className="text-sm font-medium text-green-400">✓ Оплачено</p>
                   <p className="text-zinc-500 text-xs mt-0.5">Ваше место подтверждено</p>
                 </>
+              ) : paymentPending ? (
+                <>
+                  <p className="text-sm font-medium text-blue-400">⏳ Оплата на проверке</p>
+                  <p className="text-zinc-500 text-xs mt-0.5">Администратор проверит перевод и подтвердит место</p>
+                </>
               ) : (
                 <>
                   <p className="text-sm font-medium text-orange-400">⏳ Ожидает оплаты</p>
@@ -64,10 +69,18 @@ export default function JoinButton({
               </form>
             )}
           </div>
-          {!isPaid && !["COMPLETED","CANCELLED","IN_PROGRESS"].includes(matchStatus) && (
+          {/* Кнопка оплаты — только если ещё не оплачено и не на проверке */}
+          {!isPaid && !paymentPending && !["COMPLETED","CANCELLED","IN_PROGRESS"].includes(matchStatus) && (
             <Link href={`/matches/${matchId}/pay`}
               className="block w-full bg-white text-black font-medium text-center rounded-lg py-2.5 text-sm hover:opacity-90 transition-opacity">
               Оплатить участие →
+            </Link>
+          )}
+          {/* На проверке — даём возможность поменять способ */}
+          {paymentPending && !["COMPLETED","CANCELLED","IN_PROGRESS"].includes(matchStatus) && (
+            <Link href={`/matches/${matchId}/pay`}
+              className="block w-full border border-white/[0.08] text-zinc-300 font-medium text-center rounded-lg py-2.5 text-sm hover:border-white/25 transition-colors">
+              Изменить способ оплаты
             </Link>
           )}
         </div>

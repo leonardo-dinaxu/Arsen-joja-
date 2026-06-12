@@ -5,19 +5,29 @@ import { choosePaymentAction, type PaymentState } from "@/app/actions/payment";
 
 const initialState: PaymentState = { success: false };
 
+// ⬇️ ПОМЕНЯЙ НА СВОИ РЕКВИЗИТЫ
+const CARD_NUMBER = "5614 6819 1409 9282";
+const CARD_OWNER  = "AKBARXOJAYEV SH";
+
 const PROVIDERS = [
-  { value: "CASH",  label: "Наличными при встрече", description: "Оплатите администратору перед игрой", icon: "💵", badge: "Сразу подтверждается" },
-  { value: "PAYME", label: "Payme", description: "Оплата через Payme", icon: "💳", badge: null },
-  { value: "CLICK", label: "Click", description: "Оплата через Click", icon: "💳", badge: null },
+  { value: "CARD", label: "Перевод на карту",        description: "Переведите на карту и подтвердите", icon: "💳", badge: null },
+  { value: "CASH", label: "Наличными при встрече",   description: "Оплатите администратору перед игрой", icon: "💵", badge: "Сразу подтверждается" },
 ];
 
 export default function PaymentForm({ matchId }: { matchId: string }) {
-  const [selected, setSelected] = useState("CASH");
+  const [selected, setSelected] = useState("CARD");
+  const [copied, setCopied]     = useState(false);
   const [state, formAction, isPending] = useActionState(choosePaymentAction, initialState);
 
   useEffect(() => {
     if (state.success && state.redirectTo) window.location.href = state.redirectTo;
   }, [state]);
+
+  function copyCard() {
+    navigator.clipboard.writeText(CARD_NUMBER.replace(/\s/g, ""));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   return (
     <div className="space-y-4">
@@ -48,12 +58,38 @@ export default function PaymentForm({ matchId }: { matchId: string }) {
         ))}
       </div>
 
+      {/* Реквизиты карты — показываются при выборе CARD */}
+      {selected === "CARD" && (
+        <div className="bg-[#0A0A0A] border border-white/[0.08] rounded-xl p-5">
+          <p className="text-zinc-500 text-xs uppercase tracking-widest mb-3">Реквизиты для перевода</p>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="font-display text-2xl tracking-[0.15em]">{CARD_NUMBER}</span>
+            <button type="button" onClick={copyCard}
+              className="text-xs border border-white/[0.08] px-3 py-1.5 rounded-lg hover:border-white/25 transition-colors shrink-0">
+              {copied ? "✓ Скопировано" : "Копировать"}
+            </button>
+          </div>
+          <div className="flex justify-between text-sm border-t border-white/[0.05] pt-3">
+            <span className="text-zinc-500">Владелец</span>
+            <span className="text-white font-medium">{CARD_OWNER}</span>
+          </div>
+          <p className="text-zinc-600 text-xs mt-4 leading-relaxed">
+            Переведите точную сумму на карту, затем нажмите кнопку ниже.
+            Администратор проверит платёж и подтвердит ваше место.
+          </p>
+        </div>
+      )}
+
       <form action={formAction}>
         <input type="hidden" name="matchId"  value={matchId} />
         <input type="hidden" name="provider" value={selected} />
         <button type="submit" disabled={isPending}
           className="w-full bg-white text-black font-medium rounded-xl py-3 text-sm transition-opacity hover:opacity-90 disabled:opacity-50">
-          {isPending ? "Обрабатываем..." : selected === "CASH" ? "Подтвердить — оплачу при встрече" : `Перейти к оплате через ${selected === "PAYME" ? "Payme" : "Click"}`}
+          {isPending
+            ? "Обрабатываем..."
+            : selected === "CARD"
+              ? "Я оплатил — отправить на проверку"
+              : "Подтвердить — оплачу при встрече"}
         </button>
       </form>
 

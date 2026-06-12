@@ -17,22 +17,22 @@ const ROTATING_LINES = [
 ];
 
 const STATS = [
-  { value: 500,  suffix: "+", label: "Игроков в лиге" },
-  { value: 120,  suffix: "+", label: "Сыгранных матчей" },
+  { value: 47,  suffix: "+", label: "Игроков в лиге" },
+  { value: 10,  suffix: "+", label: "Сыгранных матчей" },
   { value: 14,   suffix: "",  label: "Игроков в формате" },
-  { value: 100,  suffix: "%", label: "Матчей на видео" },
+  { value: 0,  suffix: "%", label: "Матчей на видео" },
 ];
 
 const TOP_PLAYERS = [
-  { rank: 1, name: "Жасур Умаров",    pos: "Вратарь",        rating: 9.0, matches: 31 },
-  { rank: 2, name: "Азиз Турсунов",   pos: "Центральный ПЗ", rating: 8.4, matches: 23 },
-  { rank: 3, name: "Нодир Рашидов",   pos: "Нападающий",     rating: 7.9, matches: 27 },
-  { rank: 4, name: "Фирдавс Хасанов", pos: "Защитник",       rating: 7.4, matches: 19 },
-  { rank: 5, name: "Бекзод Алимов",   pos: "Атакующий ПЗ",   rating: 7.1, matches: 22 },
+  { rank: 1, name: "Шукурхужа Акбархужаев",    pos: "Вратарь",        rating: 9.0, matches: 5 },
+  { rank: 2, name: "Азиз Турсунов",   pos: "Центральный ПЗ", rating: 8.4, matches: 4 },
+  { rank: 3, name: "Нодир Рашидов",   pos: "Нападающий",     rating: 7.9, matches: 2},
+  { rank: 4, name: "Фирдавс Хасанов", pos: "Защитник",       rating: 7.4, matches: 2 },
+  { rank: 5, name: "Бекзод Алимов",   pos: "Атакующий ПЗ",   rating: 7.1, matches: 1 },
 ];
 
 const FEATURED = [
-  { name: "Жасур Умаров",  pos: "GK", rating: 9.0, badge: "MVP",       initials: "ЖУ" },
+  { name: "Шукурхужа Акбархужаев",  pos: "GK", rating: 9.0, badge: "MVP",       initials: "ША" },
   { name: "Азиз Турсунов", pos: "CM", rating: 8.4, badge: "Капитан",   initials: "АТ" },
   { name: "Нодир Рашидов", pos: "ST", rating: 7.9, badge: "Бомбардир", initials: "НР" },
 ];
@@ -461,7 +461,7 @@ export default function LandingPage() {
           <div className="marquee flex gap-14 sm:gap-20 w-max">
             {[...Array(2)].map((_, dup) => (
               <div key={dup} className="flex gap-14 sm:gap-20 items-center shrink-0">
-                {["PAKHTAKOR ARENA", "PAYME", "CLICK", "HUMO", "UZCARD", "SPORT.UZ"].map((name) => (
+                {[ "PAYME", "CLICK", "UZCARD",].map((name) => (
                   <span key={name}
                     className="font-display text-xl sm:text-2xl text-zinc-700 tracking-[0.2em]
                                hover:text-zinc-400 transition-colors whitespace-nowrap">

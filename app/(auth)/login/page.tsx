@@ -1,41 +1,44 @@
 "use client";
 
 // =============================================================
-// SFL — Street Football League
-// app/(auth)/login/page.tsx
+// SFL — app/(auth)/login/page.tsx
 // =============================================================
 
-import { useActionState }  from "react";
+import { useActionState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link                from "next/link";
-import type { Metadata }   from "next";
+import Image from "next/image";
+import Link  from "next/link";
 import { loginAction, type LoginState } from "@/app/actions/login";
 
 const initialState: LoginState = { success: false };
 
-export default function LoginPage() {
+const inputCls =
+  "w-full bg-[#111111] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm " +
+  "placeholder:text-zinc-600 outline-none focus:border-white/30 transition-colors";
+
+function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl  = searchParams.get("callbackUrl") ?? "/dashboard";
 
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
 
   return (
-    <main className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <main className="min-h-screen bg-black flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm page-fade">
 
-        <div className="text-center mb-10">
-          <span className="text-2xl font-medium tracking-[0.25em] text-white uppercase">
-            ⬡ SFL
-          </span>
-          <p className="text-zinc-500 text-sm mt-2">Street Football League</p>
+        {/* Лого */}
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-block">
+            <Image src="/logo.png" alt="SFL" width={88} height={88}
+              className="rounded-full mx-auto shadow-[0_0_60px_rgba(255,255,255,0.1)]" priority />
+          </Link>
+          <h1 className="font-display text-3xl tracking-[0.2em] mt-5 text-white">ВХОД В ЛИГУ</h1>
+          <p className="text-zinc-500 text-sm mt-1">Введите email и пароль</p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
-          <h1 className="text-white text-xl font-medium mb-1">Вход в аккаунт</h1>
-          <p className="text-zinc-500 text-sm mb-6">Введите email и пароль</p>
-
+        <div className="bg-[#0A0A0A] border border-white/[0.08] rounded-3xl p-6 sm:p-8">
           {state.message && (
-            <div className="bg-red-950 border border-red-800 text-red-400 text-sm rounded-lg px-4 py-3 mb-6">
+            <div className="bg-red-950 border border-red-800 text-red-400 text-sm rounded-xl px-4 py-3 mb-5">
               {state.message}
             </div>
           )}
@@ -44,34 +47,30 @@ export default function LoginPage() {
             <input type="hidden" name="callbackUrl" value={callbackUrl} />
 
             <div>
-              <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="email">Email</label>
+              <label className="block text-zinc-400 text-xs tracking-[0.15em] uppercase mb-2"
+                htmlFor="email">Email</label>
               <input id="email" name="email" type="email"
                 placeholder="you@example.com" autoComplete="email" required
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5
-                           text-white text-sm placeholder:text-zinc-600 outline-none
-                           focus:border-zinc-500 transition-colors"
-              />
+                className={inputCls} />
               {state.fieldErrors?.email && (
                 <p className="text-red-400 text-xs mt-1">{state.fieldErrors.email[0]}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-zinc-400 text-sm mb-1.5" htmlFor="password">Пароль</label>
+              <label className="block text-zinc-400 text-xs tracking-[0.15em] uppercase mb-2"
+                htmlFor="password">Пароль</label>
               <input id="password" name="password" type="password"
                 placeholder="••••••••" autoComplete="current-password" required
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5
-                           text-white text-sm placeholder:text-zinc-600 outline-none
-                           focus:border-zinc-500 transition-colors"
-              />
+                className={inputCls} />
               {state.fieldErrors?.password && (
                 <p className="text-red-400 text-xs mt-1">{state.fieldErrors.password[0]}</p>
               )}
             </div>
 
             <button type="submit" disabled={isPending}
-              className="w-full bg-white text-black font-medium rounded-lg py-2.5 text-sm
-                         transition-opacity hover:opacity-90 disabled:opacity-50">
+              className="w-full bg-white text-black font-medium rounded-xl py-3 text-sm
+                         transition-all hover:opacity-90 hover:scale-[1.01] disabled:opacity-50 mt-2">
               {isPending ? "Входим..." : "Войти"}
             </button>
           </form>
@@ -79,11 +78,17 @@ export default function LoginPage() {
 
         <p className="text-center text-zinc-600 text-sm mt-6">
           Нет аккаунта?{" "}
-          <Link href="/register" className="text-white hover:underline">
-            Зарегистрироваться
-          </Link>
+          <Link href="/register" className="text-white hover:underline">Зарегистрироваться</Link>
         </p>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
